@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123c35">
+<title>دانشنامهٔ شخصی من</title>
+<style>
+:root{--bg:#f3f7f4;--card:#fff;--ink:#182b27;--muted:#64746e;--green:#176b55;--line:#dce7e0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.8}
+header{background:linear-gradient(135deg,#123c35,#208267);color:#fff;padding:24px 18px 28px;border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:25px}header p{margin:5px 0 0;color:#e0f2e9;font-size:14px}
+main{max-width:760px;margin:auto;padding:16px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,.button{border:0;border-radius:12px;padding:11px 14px;font:inherit;font-weight:bold;cursor:pointer}
+.primary{background:var(--green);color:#fff}.secondary{background:#e0eee7;color:#164a3d}
+.status{background:#e7f2ec;border:1px solid #cfe3d7;border-radius:12px;padding:10px 12px;font-size:13px;color:#285a4b}
+.toolbar{display:flex;gap:8px;margin:14px 0}.toolbar input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;background:white}
+#items{display:grid;gap:12px}.item{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 3px 12px #183c2c0a}
+.item img{width:100%;max-height:230px;object-fit:cover;background:#e8eee9}.item .body{padding:14px}.item h2{font-size:19px;margin:0 0 4px}.item .en{color:var(--muted);font-size:12px;direction:ltr;text-align:right}.item p{margin:8px 0}.item a{color:var(--green);font-weight:bold}.meta{font-size:12px;color:var(--muted)}
+.empty{text-align:center;padding:28px;background:white;border-radius:16px;color:var(--muted)}
+footer{color:var(--muted);font-size:12px;padding:20px 4px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌍 دانشنامهٔ شخصی من</h1>
+  <p>هر روز ۱۰ دانستنی تازه؛ موارد ذخیره‌شده بدون اینترنت هم قابل دیدن‌اند.</p>
+</header>
+<main>
+  <div class="status" id="status">آماده‌ام. برای دریافت دانستنی‌های تازه اینترنت را روشن کن.</div>
+  <div class="actions">
+    <button class="primary" id="update">✨ دریافت ۱۰ مورد تازه</button>
+    <button class="secondary" id="today">📅 بررسی به‌روزرسانی امروز</button>
+    <button class="secondary" id="export">⬇️ پشتیبان‌گیری</button>
+    <label class="button secondary" for="importFile">⬆️ بازیابی پشتیبان</label><input id="importFile" type="file" accept="application/json" class="hidden">
+  </div>
+  <div class="toolbar">
+    <input id="search" placeholder="جست‌وجو در دانستنی‌های ذخیره‌شده…">
+    <button class="secondary" id="clearSearch">پاک‌کردن</button>
+  </div>
+  <p id="count" class="meta">هنوز موردی ذخیره نشده است.</p>
+  <section id="items"><div class="empty">برای شروع، روی «دریافت ۱۰ مورد تازه» بزن.</div></section>
+  <footer>
+    این نسخه رایگان و بدون حساب کاربری است. برای گرفتن اطلاعات تازه، هنگام باز بودن صفحه اینترنت لازم است.
+    اگر سایت را کاملاً ببندی، یک فایل HTML به‌تنهایی نمی‌تواند هر روز در پس‌زمینه اجرا شود.
+    مطالب از خلاصه‌های ویکی‌پدیا دریافت می‌شوند؛ ممکن است بعضی روزها کمتر از ۱۰ مورد تازه پیدا شود.
+  </footer>
+</main>
+<script>
+const KEY='personal_knowledge_items_v1', DAYKEY='personal_knowledge_last_update_v1';
+const starterTitles=[
+ 'گربه','دلفین','اختاپوس','عقاب','زرافه','پلنگ','پنگوئن','زنبور عسل','نهنگ آبی','خفاش',
+ 'مریخ','زحل','ماه','خورشید','سیاه‌چاله','کهکشان راه شیری','زمین','شفق قطبی','آتشفشان','اقیانوس آرام',
+ 'ژاپن','ایران','مصر','برزیل','ایسلند','هند','کانادا','استرالیا','سوئیس','مکزیک',
+ 'خودرو','دوچرخه','قطار','هواپیما','موتور سیکلت','زیردریایی','پل','قطب‌نما','تلسکوپ','ربات',
+ 'قلب','مغز','DNA','فتوسنتز','باکتری','قارچ','مرجان','درخت بلوط','بامبو','زنبق'
+];
+function getItems(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}}
+function saveItems(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function setStatus(s){document.getElementById('status').textContent=s}
+function escapeHTML(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ const all=getItems(), q=document.getElementById('search').value.trim().toLowerCase();
+ const list=all.filter(x=>(x.title+' '+x.description+' '+(x.extract||'')).toLowerCase().includes(q));
+ document.getElementById('count').textContent=`${list.length} مورد نمایش داده می‌شود؛ مجموع ذخیره‌شده: ${all.length}`;
+ const root=document.getElementById('items');
+ if(!list.length){root.innerHTML='<div class="empty">موردی پیدا نشد. اگر اینترنت داری، موارد تازه دریافت کن.</div>';return}
+ root.innerHTML=list.slice().reverse().map(x=>`<article class="item">
+ ${x.image?`<img loading="lazy" src="${escapeHTML(x.image)}" alt="${escapeHTML(x.title)}">`:''}
+ <div class="body"><h2>${escapeHTML(x.title)}</h2>
+ <div class="en">${escapeHTML(x.originalTitle||'')}</div>
+ <p>${escapeHTML(x.extract||x.description||'برای اطلاعات بیشتر صفحهٔ منبع را ببین.')}</p>
+ <div class="meta">ذخیره‌شده در ${escapeHTML(x.savedAt||'')} · منبع: ویکی‌پدیا</div>
+ <p><a href="${escapeHTML(x.url||'#')}" target="_blank" rel="noopener">دیدن منبع (نیازمند اینترنت)</a></p></div></article>`).join('');
+}
+async function fetchPage(title){
+ const url='https://fa.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(title);
+ const r=await fetch(url,{headers:{'accept':'application/json'}});
+ if(!r.ok) throw new Error('دریافت اطلاعات ناموفق بود');
+ const d=await r.json();
+ if(!d.extract || d.type==='disambiguation') throw new Error('صفحهٔ مناسبی پیدا نشد');
+ return {title:d.title||title,originalTitle:d.titles?.canonical||title,description:d.description||'',extract:d.extract,
+ image:d.thumbnail?.source||d.originalimage?.source||'',url:d.content_urls?.desktop?.page||('https://fa.wikipedia.org/wiki/'+encodeURIComponent(d.title||title)),
+ savedAt:new Date().toLocaleDateString('fa-IR')};
+}
+let busy=false;
+async function updateItems(force=false){
+ if(busy)return; busy=true;
+ const btn=document.getElementById('update');btn.disabled=true;
+ try{
+  if(!navigator.onLine) throw new Error('اینترنت وصل نیست. موارد قبلی همچنان قابل مشاهده‌اند.');
+  const existing=getItems(), known=new Set(existing.map(x=>x.title.toLowerCase()));
+  const today=new Date().toISOString().slice(0,10);
+  if(!force && localStorage.getItem(DAYKEY)===today){setStatus('امروز قبلاً بررسی شده است. برای تلاش دوباره روی «دریافت ۱۰ مورد تازه» بزن.');return}
+  // Shuffle topic candidates so each update explores a different set.
+  const candidates=starterTitles.slice().sort(()=>Math.random()-.5);
+  let added=0, failed=0;
+  setStatus('دارم از ویکی‌پدیای فارسی اطلاعات می‌گیرم… لطفاً صفحه را باز نگه دار.');
+  for(const title of candidates){
+   if(added>=10)break;
+   try{
+    const item=await fetchPage(title);
+    const k=item.title.toLowerCase();
+    if(known.has(k)){continue}
+    known.add(k);existing.push(item);added++;
+    saveItems(existing);render();
+    setStatus(`تا اینجا ${added} مورد تازه ذخیره شد… (${added}/10)`);
+   }catch(e){failed++}
+  }
+  localStorage.setItem(DAYKEY,today);
+  setStatus(added?`تمام شد! ${added} مورد تازه ذخیره شد. دفعهٔ بعد هم در همین گوشی می‌مانند.`:'این بار مورد تازه‌ای پیدا نشد. اتصال اینترنت را بررسی کن و دوباره امتحان کن.');
+ }catch(e){setStatus(e.message||'مشکلی پیش آمد. اینترنت را بررسی کن.')}
+ finally{busy=false;btn.disabled=false;render()}
+}
+document.getElementById('update').addEventListener('click',()=>updateItems(true));
+document.getElementById('today').addEventListener('click',()=>updateItems(false));
+document.getElementById('search').addEventListener('input',render);
+document.getElementById('clearSearch').addEventListener('click',()=>{document.getElementById('search').value='';render()});
+document.getElementById('export').addEventListener('click',()=>{
+ const blob=new Blob([JSON.stringify(getItems(),null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='daneshname-backup.json';a.click();URL.revokeObjectURL(a.href);
+});
+document.getElementById('importFile').addEventListener('change',async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{const a=JSON.parse(await f.text());if(!Array.isArray(a))throw 0;
+ const merged=new Map(getItems().map(x=>[x.title.toLowerCase(),x]));
+ a.forEach(x=>{if(x.title)merged.set(x.title.toLowerCase(),x)});
+ saveItems([...merged.values()]);render();setStatus('پشتیبان بازیابی شد.')}
+ catch(err){setStatus('این فایل پشتیبان معتبر نیست.')}
+ e.target.value='';
+});
+window.addEventListener('online',()=>setStatus('اینترنت وصل شد؛ برای دریافت موارد تازه روی دکمه بزن.'));
+window.addEventListener('offline',()=>setStatus('آفلاین هستی؛ موارد ذخیره‌شده را می‌توانی ببینی.'));
+render();
+</script>
+</body>
+</html>
